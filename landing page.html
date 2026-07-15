@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orbit — Plan, Track, Ship</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================
+     1. RESET & ROOT VARIABLES
+  ============================================ */
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  :root{
+    --bg:#fcfbf9;
+    --surface:#ffffff;
+    --ink:#14181a;
+    --ink-muted:#5c6668;
+    --ink-faint:#8a9294;
+    --primary:#0f6157;
+    --primary-dark:#0b4a43;
+    --primary-light:#e7f3f0;
+    --accent:#ff6b4a;
+    --accent-light:#ffece6;
+    --line:#e6e8e6;
+    --radius-sm:8px;
+    --radius-md:14px;
+    --radius-lg:22px;
+    --shadow-sm:0 2px 8px rgba(20,24,26,0.06);
+    --shadow-md:0 12px 32px rgba(20,24,26,0.10);
+    --container:1160px;
+  }
+
+  html{ scroll-behavior:smooth; }
+
+  body{
+    font-family:'Inter', sans-serif;
+    color:var(--ink);
+    background:var(--bg);
+    line-height:1.6;
+    overflow-x:hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; scroll-behavior:auto !important; }
+  }
+
+  h1, h2, h3, h4{
+    font-family:'Sora', sans-serif;
+    font-weight:700;
+    line-height:1.2;
+    letter-spacing:-0.01em;
+  }
+
+  a{ color:inherit; text-decoration:none; }
+  ul{ list-style:none; }
+  img{ max-width:100%; display:block; }
+  button{ font-family:inherit; cursor:pointer; border:none; background:none; }
+
+  :focus-visible{
+    outline:2px solid var(--primary);
+    outline-offset:3px;
+    border-radius:4px;
+  }
+
+  .container{
+    max-width:var(--container);
+    margin:0 auto;
+    padding:0 24px;
+  }
+
+  .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:0.8rem;
+    font-weight:600;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    color:var(--primary);
+    background:var(--primary-light);
+    padding:6px 14px;
+    border-radius:100px;
+  }
+
+  /* ============================================
+     2. BUTTONS
+  ============================================ */
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    padding:14px 28px;
+    border-radius:var(--radius-sm);
+    font-weight:600;
+    font-size:0.95rem;
+    transition:transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+  .btn-primary{
+    background:var(--primary);
+    color:#fff;
+  }
+  .btn-primary:hover{
+    background:var(--primary-dark);
+    transform:translateY(-2px);
+    box-shadow:0 10px 24px rgba(15,97,87,0.28);
+  }
+  .btn-outline{
+    background:transparent;
+    color:var(--ink);
+    border:1.5px solid var(--line);
+  }
+  .btn-outline:hover{
+    border-color:var(--primary);
+    color:var(--primary);
+  }
+  .btn-block{ width:100%; }
+
+  /* ============================================
+     3. NAVBAR
+  ============================================ */
+  header{
+    position:fixed;
+    top:0; left:0; right:0;
+    z-index:1000;
+    background:rgba(252,251,249,0.85);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  nav{
+    max-width:var(--container);
+    margin:0 auto;
+    padding:18px 24px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .logo{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    font-family:'Sora', sans-serif;
+    font-weight:700;
+    font-size:1.2rem;
+  }
+  .logo-icon{
+    width:30px; height:30px;
+    border-radius:9px;
+    background:linear-gradient(135deg, var(--primary), #16897a);
+    position:relative;
+    flex-shrink:0;
+  }
+  .logo-icon::after{
+    content:'';
+    position:absolute;
+    top:50%; left:50%;
+    width:11px; height:11px;
+    border:2px solid #fff;
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+  }
+  .nav-links{
+    display:flex;
+    align-items:center;
+    gap:38px;
+  }
+  .nav-links a{
+    font-size:0.94rem;
+    font-weight:500;
+    color:var(--ink-muted);
+    position:relative;
+    transition:color 0.2s ease;
+  }
+  .nav-links a::after{
+    content:'';
+    position:absolute;
+    left:0; bottom:-5px;
+    width:0; height:2px;
+    background:var(--primary);
+    transition:width 0.25s ease;
+  }
+  .nav-links a:hover{ color:var(--ink); }
+  .nav-links a:hover::after{ width:100%; }
+
+  .nav-actions{ display:flex; align-items:center; gap:14px; }
+  .nav-toggle{
+    display:none;
+    flex-direction:column;
+    gap:5px;
+    padding:6px;
+  }
+  .nav-toggle span{
+    width:22px; height:2px;
+    background:var(--ink);
+    transition:transform 0.25s ease, opacity 0.25s ease;
+  }
+  .nav-toggle.active span:nth-child(1){ transform:translateY(7px) rotate(45deg); }
+  .nav-toggle.active span:nth-child(2){ opacity:0; }
+  .nav-toggle.active span:nth-child(3){ transform:translateY(-7px) rotate(-45deg); }
+
+  /* ============================================
+     4. HERO
+  ============================================ */
+  .hero{
+    padding:160px 0 90px;
+    background:
+      radial-gradient(ellipse 700px 420px at 85% -5%, var(--primary-light), transparent 60%),
+      var(--bg);
+  }
+  .hero-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:60px;
+    align-items:center;
+  }
+  .hero-copy .eyebrow{ margin-bottom:22px; }
+  .hero-copy h1{
+    font-size:clamp(2.2rem, 4vw, 3.4rem);
+    margin-bottom:20px;
+  }
+  .hero-copy h1 .highlight{ color:var(--primary); }
+  .hero-copy p{
+    color:var(--ink-muted);
+    font-size:1.08rem;
+    max-width:46ch;
+    margin-bottom:32px;
+  }
+  .hero-actions{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-bottom:36px;
+  }
+  .hero-proof{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    font-size:0.85rem;
+    color:var(--ink-faint);
+  }
+  .avatar-stack{ display:flex; }
+  .avatar-stack span{
+    width:30px; height:30px;
+    border-radius:50%;
+    border:2px solid var(--bg);
+    margin-left:-8px;
+    background:linear-gradient(135deg, #cfe3df, #9ec4bc);
+  }
+  .avatar-stack span:first-child{ margin-left:0; }
+
+  /* --- hero product mockup card --- */
+  .hero-visual{ position:relative; }
+  .dashboard-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-md);
+    padding:22px;
+    position:relative;
+    z-index:2;
+  }
+  .dashboard-topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .dashboard-dots{ display:flex; gap:6px; }
+  .dashboard-dots span{
+    width:9px; height:9px;
+    border-radius:50%;
+    background:var(--line);
+  }
+  .dashboard-title{
+    font-size:0.78rem;
+    font-weight:600;
+    color:var(--ink-faint);
+  }
+  .task-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 14px;
+    border-radius:var(--radius-sm);
+    background:var(--bg);
+    margin-bottom:10px;
+    opacity:0;
+    animation:slide-in 0.5s ease forwards;
+  }
+  .task-row:nth-child(2){ animation-delay:0.15s; }
+  .task-row:nth-child(3){ animation-delay:0.3s; }
+  .task-row:nth-child(4){ animation-delay:0.45s; }
+  @keyframes slide-in{
+    from{ opacity:0; transform:translateX(-14px); }
+    to{ opacity:1; transform:translateX(0); }
+  }
+  .task-check{
+    width:19px; height:19px;
+    border-radius:6px;
+    border:1.5px solid var(--line);
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .task-row.done .task-check{
+    background:var(--primary);
+    border-color:var(--primary);
+  }
+  .task-row.done .task-check::after{
+    content:'✓';
+    color:#fff;
+    font-size:0.7rem;
+  }
+  .task-label{ font-size:0.88rem; flex-grow:1; }
+  .task-row.done .task-label{ color:var(--ink-faint); text-decoration:line-through; }
+  .task-tag{
+    font-size:0.68rem;
+    font-weight:600;
+    padding:3px 9px;
+    border-radius:100px;
+    background:var(--accent-light);
+    color:var(--accent);
+    white-space:nowrap;
+  }
+  .task-tag.tag-primary{ background:var(--primary-light); color:var(--primary); }
+
+  .progress-widget{
+    margin-top:16px;
+    padding-top:16px;
+    border-top:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .progress-bar{
+    flex-grow:1;
+    height:6px;
+    background:var(--line);
+    border-radius:100px;
+    margin:0 14px;
+    overflow:hidden;
+  }
+  .progress-bar span{
+    display:block;
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg, var(--primary), #16897a);
+    border-radius:100px;
+    animation:fill-bar 1.4s ease 0.6s forwards;
+  }
+  @keyframes fill-bar{ to{ width:72%; } }
+  .progress-pct{ font-size:0.8rem; font-weight:700; color:var(--primary); }
+
+  .floating-chip{
+    position:absolute;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    box-shadow:var(--shadow-sm);
+    padding:12px 16px;
+    font-size:0.82rem;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    z-index:3;
+    animation:float 4.5s ease-in-out infinite;
+  }
+  .chip-1{ top:-16px; right:-24px; animation-delay:0s; }
+  .chip-2{ bottom:12px; left:-30px; animation-delay:1.2s; }
+  @keyframes float{
+    0%, 100%{ transform:translateY(0); }
+    50%{ transform:translateY(-10px); }
+  }
+  .chip-dot{ width:8px; height:8px; border-radius:50%; background:var(--accent); }
+  .chip-2 .chip-dot{ background:var(--primary); }
+
+  /* ============================================
+     5. SECTION HEADS
+  ============================================ */
+  section{ padding:100px 0; }
+  .section-head{
+    max-width:600px;
+    margin:0 auto 60px;
+    text-align:center;
+  }
+  .section-head .eyebrow{ margin-bottom:18px; }
+  .section-head h2{
+    font-size:clamp(1.8rem, 3vw, 2.4rem);
+    margin-bottom:14px;
+  }
+  .section-head p{ color:var(--ink-muted); font-size:1.02rem; }
+
+  /* ============================================
+     6. SERVICES
+  ============================================ */
+  .services{ background:var(--surface); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .services-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:20px;
+  }
+  .service-card{
+    padding:30px 26px;
+    border-radius:var(--radius-md);
+    border:1px solid var(--line);
+    background:var(--bg);
+    transition:transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    opacity:0;
+    transform:translateY(16px);
+  }
+  .service-card.in-view{ opacity:1; transform:translateY(0); transition:opacity 0.6s ease, transform 0.6s ease; }
+  .service-card:hover{
+    transform:translateY(-6px);
+    box-shadow:var(--shadow-md);
+    border-color:transparent;
+  }
+  .service-icon{
+    width:44px; height:44px;
+    border-radius:12px;
+    background:var(--primary-light);
+    color:var(--primary);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:18px;
+    transition:background 0.3s ease, color 0.3s ease;
+  }
+  .service-card:hover .service-icon{
+    background:var(--primary);
+    color:#fff;
+  }
+  .service-card h3{ font-size:1.08rem; margin-bottom:10px; }
+  .service-card p{ color:var(--ink-muted); font-size:0.9rem; }
+
+  /* ============================================
+     7. PRICING
+  ============================================ */
+  .pricing-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:24px;
+    align-items:stretch;
+  }
+  .price-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius-lg);
+    padding:36px 30px;
+    display:flex;
+    flex-direction:column;
+    transition:transform 0.3s ease, box-shadow 0.3s ease;
+    opacity:0;
+    transform:translateY(16px);
+  }
+  .price-card.in-view{ opacity:1; transform:translateY(0); transition:opacity 0.6s ease, transform 0.6s ease; }
+  .price-card:hover{ transform:translateY(-6px); box-shadow:var(--shadow-md); }
+  .price-card.featured{
+    background:var(--primary);
+    color:#fff;
+    border-color:var(--primary);
+  }
+  .price-card.featured:hover{ box-shadow:0 16px 36px rgba(15,97,87,0.32); }
+  .price-badge{
+    align-self:flex-start;
+    font-size:0.72rem;
+    font-weight:700;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    background:var(--accent);
+    color:#fff;
+    padding:5px 12px;
+    border-radius:100px;
+    margin-bottom:18px;
+  }
+  .price-plan{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+  .price-card.featured .price-plan{ color:#e6f3f0; }
+  .price-amount{
+    font-family:'Sora', sans-serif;
+    font-weight:800;
+    font-size:2.6rem;
+    margin-bottom:6px;
+  }
+  .price-amount span{
+    font-family:'Inter', sans-serif;
+    font-size:0.95rem;
+    font-weight:400;
+    color:var(--ink-faint);
+  }
+  .price-card.featured .price-amount span{ color:#c9e3dd; }
+  .price-desc{
+    font-size:0.9rem;
+    color:var(--ink-muted);
+    padding-bottom:24px;
+    margin-bottom:24px;
+    border-bottom:1px solid var(--line);
+  }
+  .price-card.featured .price-desc{ color:#d5ebe6; border-bottom-color:rgba(255,255,255,0.18); }
+  .price-features{ flex-grow:1; margin-bottom:28px; }
+  .price-features li{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    font-size:0.92rem;
+    padding:7px 0;
+  }
+  .price-features li::before{
+    content:'✓';
+    color:var(--primary);
+    font-weight:700;
+    flex-shrink:0;
+  }
+  .price-card.featured .price-features li::before{ color:#8fd6c8; }
+  .price-card.featured .btn-outline{
+    border-color:rgba(255,255,255,0.4);
+    color:#fff;
+  }
+  .price-card.featured .btn-outline:hover{
+    background:#fff;
+    color:var(--primary);
+  }
+
+  /* ============================================
+     8. CTA BAND
+  ============================================ */
+  .cta-band{
+    background:linear-gradient(135deg, var(--primary), #0b4a43);
+    border-radius:var(--radius-lg);
+    max-width:var(--container);
+    margin:0 auto;
+    padding:64px 50px;
+    text-align:center;
+    color:#fff;
+  }
+  .cta-band h2{ font-size:clamp(1.7rem, 3vw, 2.2rem); margin-bottom:14px; }
+  .cta-band p{ color:#d5ebe6; max-width:46ch; margin:0 auto 32px; }
+  .cta-band .btn-primary{ background:#fff; color:var(--primary); }
+  .cta-band .btn-primary:hover{ background:var(--accent-light); box-shadow:0 10px 24px rgba(0,0,0,0.25); }
+
+  /* ============================================
+     9. FOOTER
+  ============================================ */
+  footer{ border-top:1px solid var(--line); padding:60px 0 32px; margin-top:20px; }
+  .footer-grid{
+    display:grid;
+    grid-template-columns:1.6fr 1fr 1fr 1fr;
+    gap:40px;
+    margin-bottom:44px;
+  }
+  .footer-brand p{ color:var(--ink-muted); font-size:0.9rem; margin-top:14px; max-width:32ch; }
+  .footer-col h4{
+    font-family:'Sora', sans-serif;
+    font-size:0.85rem;
+    font-weight:600;
+    margin-bottom:16px;
+  }
+  .footer-col a{
+    display:block;
+    color:var(--ink-muted);
+    font-size:0.9rem;
+    padding:5px 0;
+    transition:color 0.2s ease;
+    width:fit-content;
+  }
+  .footer-col a:hover{ color:var(--primary); }
+  .footer-bottom{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding-top:26px;
+    border-top:1px solid var(--line);
+    font-size:0.85rem;
+    color:var(--ink-faint);
+    flex-wrap:wrap;
+    gap:10px;
+  }
+
+  /* ============================================
+     10. RESPONSIVE
+  ============================================ */
+  @media (max-width: 980px){
+    .services-grid{ grid-template-columns:repeat(2, 1fr); }
+  }
+
+  @media (max-width: 900px){
+    .hero-grid{ grid-template-columns:1fr; gap:56px; }
+    .hero{ padding:140px 0 70px; }
+    .pricing-grid{ grid-template-columns:1fr; max-width:420px; margin:0 auto; }
+    .footer-grid{ grid-template-columns:1fr 1fr; gap:32px; }
+  }
+
+  @media (max-width: 720px){
+    .nav-links{
+      position:fixed;
+      top:64px; left:0; right:0;
+      background:var(--surface);
+      border-bottom:1px solid var(--line);
+      flex-direction:column;
+      align-items:flex-start;
+      gap:0;
+      padding:8px 24px 16px;
+      transform:translateY(-140%);
+      opacity:0;
+      transition:transform 0.3s ease, opacity 0.3s ease;
+    }
+    .nav-links.open{ transform:translateY(0); opacity:1; }
+    .nav-links a{ padding:12px 0; width:100%; border-bottom:1px solid var(--line); }
+    .nav-actions .btn-primary{ display:none; }
+    .nav-toggle{ display:flex; }
+    .services-grid{ grid-template-columns:1fr; }
+    .footer-grid{ grid-template-columns:1fr; gap:28px; }
+    section{ padding:72px 0; }
+    .cta-band{ padding:46px 26px; border-radius:var(--radius-md); }
+    .chip-1, .chip-2{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER / NAV ============ -->
+<header>
+  <nav>
+    <div class="logo">
+      <span class="logo-icon"></span>
+      Orbit
+    </div>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#home">Home</a></li>
+      <li><a href="#services">Services</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="#contact" class="btn btn-primary">Get started</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="home">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">● Now in public beta</span>
+        <h1>Plan the work.<br>Track the <span class="highlight">progress</span>.<br>Ship on time.</h1>
+        <p>Orbit brings your team's tasks, timelines, and conversations into one clean workspace — so nothing falls through the cracks and nobody has to ask "what's the status?" again.</p>
+        <div class="hero-actions">
+          <a href="#contact" class="btn btn-primary">Start free trial →</a>
+          <a href="#services" class="btn btn-outline">See how it works</a>
+        </div>
+        <div class="hero-proof">
+          <div class="avatar-stack">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <span>Trusted by 2,400+ teams to stay on schedule</span>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="floating-chip chip-1"><span class="chip-dot"></span> Sprint on track</div>
+        <div class="floating-chip chip-2"><span class="chip-dot"></span> 3 tasks due today</div>
+
+        <div class="dashboard-card">
+          <div class="dashboard-topbar">
+            <div class="dashboard-dots"><span></span><span></span><span></span></div>
+            <span class="dashboard-title">Sprint 14 · Marketing Launch</span>
+          </div>
+
+          <div class="task-row done">
+            <span class="task-check"></span>
+            <span class="task-label">Finalize landing page copy</span>
+            <span class="task-tag tag-primary">Design</span>
+          </div>
+          <div class="task-row done">
+            <span class="task-check"></span>
+            <span class="task-label">Set up analytics tracking</span>
+            <span class="task-tag tag-primary">Dev</span>
+          </div>
+          <div class="task-row">
+            <span class="task-check"></span>
+            <span class="task-label">Review pricing page with team</span>
+            <span class="task-tag">Review</span>
+          </div>
+          <div class="task-row">
+            <span class="task-check"></span>
+            <span class="task-label">Schedule launch announcement</span>
+            <span class="task-tag">Marketing</span>
+          </div>
+
+          <div class="progress-widget">
+            <span class="dashboard-title">Sprint progress</span>
+            <span class="progress-bar"><span></span></span>
+            <span class="progress-pct">72%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SERVICES ============ -->
+  <section class="services" id="services">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">What we offer</span>
+        <h2>Everything your team needs to stay aligned</h2>
+        <p>Four core tools, built to work together instead of living in separate tabs.</p>
+      </div>
+
+      <div class="services-grid">
+        <div class="service-card">
+          <div class="service-icon">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M3 8h14M7 3v3M13 3v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h3>Task planning</h3>
+          <p>Break projects into sprints and tasks with due dates, owners, and priorities that everyone can see at a glance.</p>
+        </div>
+
+        <div class="service-card">
+          <div class="service-icon">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="2.5" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="13" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M9 8.5l3 3" stroke="currentColor" stroke-width="1.5"/></svg>
+          </div>
+          <h3>Team collaboration</h3>
+          <p>Comment, tag teammates, and share files directly on tasks — no more digging through chat history for context.</p>
+        </div>
+
+        <div class="service-card">
+          <div class="service-icon">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 16V10M9 16V4M15 16v-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h3>Analytics &amp; reports</h3>
+          <p>See velocity, workload, and bottlenecks in real time with dashboards that update as work gets done.</p>
+        </div>
+
+        <div class="service-card">
+          <div class="service-icon">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
+          </div>
+          <h3>Integrations</h3>
+          <p>Connect the tools you already use — calendars, chat, and file storage — so Orbit fits into your workflow, not the other way around.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PRICING ============ -->
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Pricing</span>
+        <h2>Simple plans that scale with your team</h2>
+        <p>Start free, upgrade when you need more. No hidden fees, cancel anytime.</p>
+      </div>
+
+      <div class="pricing-grid">
+        <div class="price-card">
+          <div class="price-plan">Starter</div>
+          <div class="price-amount">$0<span>/ month</span></div>
+          <div class="price-desc">For individuals and small teams just getting organized.</div>
+          <ul class="price-features">
+            <li>Up to 3 projects</li>
+            <li>Basic task boards</li>
+            <li>1 GB file storage</li>
+            <li>Community support</li>
+          </ul>
+          <a href="#contact" class="btn btn-outline btn-block">Get started</a>
+        </div>
+
+        <div class="price-card featured">
+          <div class="price-badge">Most popular</div>
+          <div class="price-plan">Pro</div>
+          <div class="price-amount">$12<span>/ user / month</span></div>
+          <div class="price-desc">For growing teams that need reporting and integrations.</div>
+          <ul class="price-features">
+            <li>Unlimited projects</li>
+            <li>Advanced analytics</li>
+            <li>50 GB file storage</li>
+            <li>Priority support</li>
+            <li>All integrations included</li>
+          </ul>
+          <a href="#contact" class="btn btn-outline btn-block">Start free trial</a>
+        </div>
+
+        <div class="price-card">
+          <div class="price-plan">Enterprise</div>
+          <div class="price-amount">Custom</div>
+          <div class="price-desc">For organizations that need security, scale, and control.</div>
+          <ul class="price-features">
+            <li>Everything in Pro</li>
+            <li>Single sign-on (SSO)</li>
+            <li>Dedicated account manager</li>
+            <li>Custom onboarding</li>
+          </ul>
+          <a href="#contact" class="btn btn-outline btn-block">Contact sales</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CTA BAND ============ -->
+  <section id="contact">
+    <div class="container">
+      <div class="cta-band">
+        <h2>Ready to bring your team's work into one place?</h2>
+        <p>Join thousands of teams already planning smarter with Orbit. No credit card required to start.</p>
+        <a href="#" class="btn btn-primary">Start your free trial →</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo">
+          <span class="logo-icon"></span>
+          Orbit
+        </div>
+        <p>The workspace for teams who'd rather ship than status-update. Plan, track, and deliver — all in one place.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="#services">Services</a>
+        <a href="#pricing">Pricing</a>s
+        <a href="#">Integrations</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="#">About</a>
+        <a href="#">Careers</a>
+        <a href="#contact">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <a href="#">Blog</a>
+        <a href="#">Help center</a>
+        <a href="#">Privacy policy</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Orbit. All rights reserved.</span>
+      <span>Built with HTML, CSS &amp; JavaScript</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  /* ============ MOBILE NAV TOGGLE ============ */
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
+
+  navToggle.addEventListener('click', () => {
+    const isOpen = navLinks.classList.toggle('open');
+    navToggle.classList.toggle('active');
+    navToggle.setAttribute('aria-expanded', isOpen);
+  });
+
+  // Close mobile menu when a nav link is clicked
+  navLinks.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      navLinks.classList.remove('open');
+      navToggle.classList.remove('active');
+      navToggle.setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  /* ============ SCROLL REVEAL FOR CARDS ============ */
+  const revealEls = document.querySelectorAll('.service-card, .price-card');
+
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, index) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => entry.target.classList.add('in-view'), (index % 4) * 80);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+
+    revealEls.forEach(el => observer.observe(el));
+  } else {
+    // Fallback for older browsers
+    revealEls.forEach(el => el.classList.add('in-view'));
+  }
+
+  /* ============ HEADER SHADOW ON SCROLL ============ */
+  const header = document.querySelector('header');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 10) {
+      header.style.boxShadow = '0 2px 12px rgba(20,24,26,0.06)';
+    } else {
+      header.style.boxShadow = 'none';
+    }
+  });
+</script>
+
+</body>
+</html>
